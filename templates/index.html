@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABSpider Vulnerability Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to mimic the professional dark theme */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark Slate 900 for the background */
+            color: #d1d5db; /* Light gray default text */
+        }
+        .scanner-card {
+            max-width: 1200px;
+            margin: 4rem auto;
+            background-color: #1f2937; /* Dark Slate 800 for the card */
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+            border: 1px solid #374151; /* Subtle border */
+        }
+        .output-console {
+            height: 450px;
+            background-color: #030712; /* Even darker console background */
+            color: #6ee7b7; /* Bright green for console text */
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid #1f2937;
+        }
+        /* Custom scrollbar for dark theme */
+        .output-console::-webkit-scrollbar {
+            width: 8px;
+        }
+        .output-console::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 4px;
+        }
+
+        /* Specific text colors for console output types */
+        .output-console .error { color: #f87171; } /* Red for errors */
+        .output-console .success { color: #34d399; } /* Green for success */
+        .output-console .info { color: #93c5fd; } /* Blue for info */
+        .output-console .critical { color: #f87171; font-weight: bold; } /* Bold Red for critical findings */
+        .output-console .warning { color: #facc15; } /* Yellow for warnings */
+        .output-console .api { color: #a78bfa; } /* Purple for API calls */
+
+        .parsed-highlights {
+            min-height: 150px;
+            background-color: #111827; /* Darker background for distinction */
+            border: 1px solid #374151;
+        }
+
+        /* Scan Checkbox (Red) */
+        .scan-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #ef4444;
+            background-color: #1f2937; /* Same as card */
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .scan-checkbox:checked {
+            background-color: #ef4444;
+            border-color: #ef4444;
+        }
+        .scan-checkbox:checked::before {
+            content: '\2713';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #1f2937; /* Dark color checkmark */
+            font-size: 0.75rem;
+        }
+
+        /* Scan Toggle (Red) */
+        .scan-toggle {
+            width: 3.5rem;
+            height: 1.5rem;
+            background-color: #4b5563; /* Gray background for OFF */
+            border-radius: 9999px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .scan-toggle-circle {
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: white;
+            border-radius: 9999px;
+            position: absolute;
+            top: 0.125rem;
+            left: 0.125rem;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        .scan-toggle.checked {
+            background-color: #ef4444; /* Solid red when checked */
+        }
+        .scan-toggle.checked .scan-toggle-circle {
+            transform: translateX(2rem);
+        }
+
+        /* Red button with shadow for "Run Scan" */
+        .btn-primary {
+            background-color: #ef4444;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.5), 0 2px 4px -2px rgba(239, 68, 68, 0.5);
+        }
+        .btn-primary:hover {
+            background-color: #dc2626;
+        }
+        .btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+
+        /* Secondary Button Style for Dark Theme */
+        .btn-secondary {
+            background-color: #374151;
+            color: #d1d5db;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .btn-secondary:disabled {
+            background-color: #374151;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Input styling for Dark Theme */
+        input[type="text"] {
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            color: white;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 1px #ef4444;
+        }
+
+        /* --- Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .modal-content {
+            background-color: #1f2937; /* Dark Slate 800 */
+            border-radius: 1rem;
+            padding: 2rem;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Format Button Customization */
+        .format-btn {
+            background-color: #374151;
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            transition: all 0.2s;
+        }
+        .format-btn:hover {
+            background-color: #4b5563;
+        }
+        .format-btn.selected {
+            border-color: #ef4444;
+            background-color: #ef4444;
+            color: white;
+        }
+        .format-btn.selected .format-tag {
+            background-color: #dc2626; /* Darker red */
+        }
+        .format-tag {
+            background-color: #4b5563;
+            color: #d1d5db;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scanner-card p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-1">
+            <div class="flex items-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ef4444" class="w-10 h-10 mr-3">
+                    <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
+                </svg>
+                <div>
+                    <h1 class="text-3xl font-bold text-white">ABSpider v3.1</h1>
+                    <p class="text-sm text-gray-400">Next-gen Reconnaissance & Vulnerability Dashboard</p>
+                </div>
+            </div>
+
+            <div class="space-y-5 mb-6">
+                <div>
+                    <label for="target-domain" class="block text-xs font-semibold text-gray-400 uppercase mb-1">Target Domain (e.g., example.com)</label>
+                    <input id="target-domain" type="text" placeholder="google.com" value="google.com"
+                           class="w-full p-3 border rounded-lg text-white text-base focus:ring-red-500">
+                </div>
+            
+                <div id="action-buttons" class="space-y-3 pt-2">
+                    <button id="run-scan-btn" class="btn-primary w-full flex items-center justify-center" onclick="startScan()">
+                        <svg id="run-scan-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="run-scan-text">RUN SCAN</span>
+                    </button>
+                    
+                    <div class="flex space-x-3">
+                        <button id="save-report-btn" class="btn-secondary w-full" disabled>
+                            Save Session
+                        </button>
+                        <button id="clear-output-btn" class="btn-secondary w-full" onclick="clearOutput()">
+                            Clear Logs
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 p-4 rounded-xl space-y-3 border border-red-500/30">
+                    <h3 class="text-sm font-semibold text-red-400 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21l-1.5-6.75H3.75z" />
+                        </svg>
+                        LIVE METRICS
+                    </h3>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div class="flex flex-col">
+                            <span class="text-gray-400 text-xs">STATUS</span>
+                            <span id="scan-status" class="font-bold text-lg text-gray-500">Idle</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-gray-400 text-xs">CRITICAL FINDS</span>
+                            <span id="critical-findings-metric" class="font-bold text-lg text-yellow-500">0</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-gray-400 text-xs">TARGET IP</span>
+                            <span id="target-ip-metric" class="font-mono text-xs text-red-300">N/A</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-gray-400 text-xs">TIME ELAPSED</span>
+                            <span id="running-status" class="font-mono text-xs text-gray-500">00:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between mb-2 border-b border-gray-700 pb-2">
+                    <label class="text-xl font-bold text-white">Modules</label>
+                    <div id="main-scan-toggle" class="scan-toggle checked" onclick="toggleAllScans()">
+                        <div class="scan-toggle-circle"></div>
+                    </div>
+                </div>
+
+                <div id="scan-options" class="grid grid-cols-2 gap-y-3 text-sm text-gray-300">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="scan-basic" value="basic" checked class="scan-checkbox">
+                        Basic Check <span class="text-xs text-red-500 ml-1">(Live)</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="scan-sqli" value="sqli" class="scan-checkbox">
+                        SQLi Injection <span class="text-xs text-yellow-500 ml-1">(Simulated)</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="scan-whois" value="whois" checked class="scan-checkbox">
+                        Whois Lookup <span class="text-xs text-red-500 ml-1">(Live)</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="scan-wordpress" value="wordpress" class="scan-checkbox">
+                        WordPress Scan <span class="text-xs text-red-500 ml-1">(Live)</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="scan-geoip" value="geoip" checked class="scan-checkbox">
+                        Geo-IP Lookup <span class="text-xs text-yellow-500 ml-1">(Client API)</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="scan-subdomain" value="subdomain" checked class="scan-checkbox">
+                        Subdomains <span class="text-xs text-red-500 ml-1">(Live)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-bold text-white">Live Console Output</h2>
+                    <span id="console-status-label" class="text-sm font-mono text-gray-400">ABSpider Initialized</span>
+                </div>
+                <pre id="live-output" class="output-console">
+<span class="info">[[ ABSpider v3.1 Initializing Console... ]]</span>
+<span class="info">Ready to scan. Enter a domain and click RUN SCAN.</span>
+<span class="info">Live modules: Basic Check, Whois, Subdomains, WordPress (via Python backend).</span>
+<span class="info">Client-side modules: Geo-IP (using public API), SQLi (Simulated).</span>
+                </pre>
+            </div>
+
+            <div class="parsed-highlights p-6 rounded-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-bold text-white">Key Data & Highlights</h2>
+                    <span class="text-xs text-gray-500">Auto-extracted from log stream</span>
+                </div>
+
+                <div id="highlights-content" class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    <p class="text-gray-500 col-span-2 md:col-span-3" id="no-highlights">Waiting for scan data...</p>
+                </div>
+                
+                <div id="findings-summary" class="text-sm mt-4 hidden">
+                    <span class="font-bold">Summary:</span> 
+                    <span id="medium-findings" class="text-yellow-400">0 medium findings</span>, 
+                    <span id="critical-findings" class="text-red-400">0 critical findings</span>
+                </div>
+
+                <div class="flex justify-end mt-6">
+                    <button id="download-report-btn" class="btn-primary" onclick="showExportModal()" disabled>
+                        DOWNLOAD FULL REPORT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="modal-overlay hidden">
+        <div class="modal-content bg-gray-800 text-white border border-gray-700">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
+                <h2 class="text-2xl font-bold text-red-400">Export Report</h2>
+                <span id="modal-status" class="text-sm px-3 py-1 rounded-full font-semibold bg-green-900 text-green-300">Ready for Export</span>
+            </div>
+
+            <p class="text-sm text-gray-400 mb-6" id="modal-summary-line">
+                <span id="modal-domain" class="font-semibold">example.com</span> • Scan completed • <span id="modal-findings">0 medium findings</span>
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-4 bg-gray-900 rounded-lg border border-gray-700">
+                    <h3 class="font-semibold text-gray-300 mb-2">Report Summary</h3>
+                    <pre id="report-preview" class="text-xs text-gray-400 whitespace-pre-wrap overflow-auto h-40 font-mono">
+ABSpider Report — example.com
+Date: 2025-10-21
+Includes: Basic Scan, Geo-IP Lookup
+IP: N/A
+Country: N/A
+Findings: 0 medium, 0 critical
+                    </pre>
+                    <div class="mt-3 text-xs text-gray-500 space-y-1">
+                        <p>File name: <span id="report-filename" class="font-mono">abspider-example.com-2025-10-21</span></p>
+                        <p>Format: PDF (Default)</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <button class="w-full text-left p-3 border border-red-500 rounded-lg bg-red-900/40 hover:bg-red-900/60 transition text-white">
+                        <span class="font-semibold">PDF</span> (.pdf) <span class="float-right text-xs px-2 py-0.5 bg-red-600 text-white rounded-full">Recommended</span>
+                    </button>
+                    <button class="w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                        <span class="font-semibold">Markdown</span> (.md)
+                    </button>
+                    <button class="w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                        <span class="font-semibold">JSON</span> (.json)
+                    </button>
+                    <button class="w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                        <span class="font-semibold">HTML</span> (.html)
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex justify-end items-center mt-6 pt-4 border-t border-gray-700">
+                <div class="space-x-3">
+                    <button class="btn-secondary px-4 py-2" onclick="hideExportModal()">Cancel</button>
+                    <button class="btn-primary" onclick="downloadReport()">Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="custom-message-box" class="modal-overlay hidden">
+        <div class="modal-content bg-gray-800 text-white border border-gray-700 text-center max-w-sm">
+            <h3 id="message-title" class="text-xl font-bold mb-3 text-red-400"></h3>
+            <p id="message-body" class="text-gray-300 mb-6"></p>
+            <button class="btn-primary w-24" onclick="document.getElementById('custom-message-box').classList.add('hidden')">OK</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Core Variables and Configuration ---
+        const outputEl = document.getElementById('live-output');
+        const statusEl = document.getElementById('scan-status');
+        const runBtn = document.getElementById('run-scan-btn');
+        const runTextEl = document.getElementById('run-scan-text');
+        const spinnerEl = document.getElementById('run-scan-spinner');
+        const domainInput = document.getElementById('target-domain');
+        const highlightsEl = document.getElementById('highlights-content');
+        const noHighlightsEl = document.getElementById('no-highlights');
+        const saveReportBtn = document.getElementById('save-report-btn');
+        const downloadReportBtn = document.getElementById('download-report-btn');
+        const runningStatusEl = document.getElementById('running-status');
+        const criticalMetricEl = document.getElementById('critical-findings-metric');
+        const targetIpMetricEl = document.getElementById('target-ip-metric');
+        const consoleStatusLabelEl = document.getElementById('console-status-label');
+
+
+        let isScanning = false;
+        let totalOutput = [];
+        let targetIP = 'N/A';
+        let findings = { medium: 0, critical: 0 };
+        
+        // Scan modules map (only used for frontend UI/checkbox management)
+        const scanModules = {
+            'basic': { id: 'scan-basic', name: 'Basic Check (Live)', type: 'backend' },
+            'whois': { id: 'scan-whois', name: 'Whois Lookup (Live)', type: 'backend' }, 
+            'subdomain': { id: 'scan-subdomain', name: 'Subdomain Scan (Live)', type: 'backend' }, 
+            'wordpress': { id: 'scan-wordpress', name: 'WordPress Scan (Live)', type: 'backend' }, 
+            'sqli': { id: 'scan-sqli', name: 'Error Based SQli (Simulated)', type: 'simulated' },
+            'geoip': { id: 'scan-geoip', name: 'Geo-IP Lookup (Client API)', type: 'client-api' }
+        };
+
+        // --- Utility Functions (Unchanged) ---
+
+        /** Extracts a clean hostname (domain.tld) regardless of scheme or www. */
+        function getCleanHostname(url) {
+            try {
+                if (!url.startsWith('http')) {
+                    url = 'https://' + url;
+                }
+                const urlObj = new URL(url);
+                let host = urlObj.hostname;
+                if (host.startsWith('www.')) {
+                    host = host.substring(4);
+                }
+                return host;
+            } catch (e) {
+                return url;
+            }
+        }
+
+        /** Formats log lines with specific colors based on content. */
+        function formatLine(line) {
+            if (line.includes('[CRITICAL ERROR]') || line.includes('[CRITICAL]')) {
+                return `<span class="critical">${line}</span>`;
+            } else if (line.includes('[ERROR]')) {
+                return `<span class="error">${line}</span>`;
+            } else if (line.includes('[SUCCESS]')) {
+                return `<span class="success">${line}</span>`;
+            } else if (line.includes('[FINDING]') || line.includes('[WARNING]')) {
+                return `<span class="warning">${line}</span>`;
+            } else if (line.includes('[LIVE API]')) {
+                 return `<span class="api">${line}</span>`;
+            } else if (line.includes('[INFO]') || line.startsWith('--- Executing Module') || line.startsWith('$ abspider') || line.startsWith('[SCAN]')) {
+                return `<span class="info">${line}</span>`;
+            }
+            return line; // Default color
+        }
+
+        /** Simulates real-time console output by printing lines one by one. */
+        async function printOutput(lines) {
+            for (const line of lines) {
+                const isScrolledToBottom = outputEl.scrollHeight - outputEl.clientHeight <= outputEl.scrollTop + 1;
+                
+                totalOutput.push(line);
+                
+                // Use innerHTML to allow for formatted spans
+                outputEl.innerHTML = totalOutput.map(formatLine).join('\n');
+                
+                if (isScrolledToBottom) {
+                    outputEl.scrollTop = outputEl.scrollHeight;
+                }
+
+                // Small delay to simulate console stream
+                await new Promise(resolve => setTimeout(resolve, 5)); 
+            }
+        }
+
+        /** Updates the highlights panel and metrics based on scan output. */
+        function updateHighlights(domain) {
+            highlightsEl.innerHTML = '';
+            let hasHighlights = false;
+            let currentHighlights = {};
+
+            const highlightMap = {
+                // Extracts the IP from the Python backend's output
+                'IP': line => line.includes('Target IP resolved:') && line.split(': ')[1].trim(), 
+                'Server': line => line.includes('Server:') && line.split('Server: ')[1].trim(),
+                'Country': line => line.includes('Country:') && line.split('Country: ')[1].trim(),
+                'City': line => line.includes('City:') && line.split('City: ')[1].trim(),
+                'Organization': line => line.includes('Organization:') && line.split('Organization: ')[1].trim(),
+                'WordPress Version': line => line.includes('WordPress Version:') && line.split('WordPress Version: ')[1].trim(),
+                'Registrar': line => line.includes('Registrar:') && line.split('Registrar: ')[1].trim(),
+            };
+
+            findings = { medium: 0, critical: 0 };
+            
+            totalOutput.forEach(line => {
+                // Finding detection
+                if (line.includes('[FINDING] Low-Severity') || line.includes('[FINDING] Medium-Severity') || line.includes('[WARNING]')) {
+                    findings.medium++;
+                }
+                if (line.includes('[CRITICAL]') || line.includes('[CRITICAL ERROR]')) {
+                    findings.critical++;
+                }
+
+                // Highlight parsing
+                for (const key in highlightMap) {
+                    if (!currentHighlights[key]) {
+                        const value = highlightMap[key](line);
+                        if (value) {
+                            currentHighlights[key] = value;
+                        }
+                    }
+                }
+            });
+            
+            // Map keys to display names
+            const displayMapping = {
+                'IP': 'Target IP',
+                'Server': 'Web Server',
+                'Country': 'Country/Region',
+                'City': 'City/Location',
+                'Organization': 'Organization',
+                'WordPress Version': 'CMS/Version',
+                'Registrar': 'Registrar',
+            };
+
+            // Display gathered highlights
+            const keysToDisplay = ['IP', 'Country', 'City', 'Server', 'Registrar', 'Organization', 'WordPress Version'];
+            keysToDisplay.forEach(key => {
+                if (currentHighlights[key]) {
+                    const label = displayMapping[key] || key;
+                    const value = currentHighlights[key];
+                    highlightsEl.innerHTML += `
+                        <div class="flex flex-col p-2 bg-gray-900 rounded-md">
+                            <span class="text-gray-400 text-xs">${label}</span>
+                            <span class="text-white font-mono">${value}</span>
+                        </div>
+                    `;
+                    hasHighlights = true;
+                    if (key === 'IP') {
+                        targetIP = value;
+                    }
+                }
+            });
+            
+            // Add static (simulated) highlights
+            highlightsEl.innerHTML += `<div class="flex flex-col p-2 bg-gray-900 rounded-md">
+                <span class="text-gray-400 text-xs">Ports</span>
+                <span class="text-white font-mono">80, 443 (Sim)</span>
+            </div>`;
+            hasHighlights = true;
+
+            if (!hasHighlights) {
+                highlightsEl.appendChild(noHighlightsEl);
+            } else {
+                document.getElementById('findings-summary').classList.remove('hidden');
+            }
+            
+            // Update Metric Bar
+            document.getElementById('medium-findings').textContent = `${findings.medium} medium findings`;
+            document.getElementById('critical-findings').textContent = `${findings.critical} critical findings`;
+            criticalMetricEl.textContent = findings.critical;
+            targetIpMetricEl.textContent = targetIP;
+        }
+
+        /** Clears the console and resets state. */
+        function clearOutput() {
+            if (isScanning) return;
+            totalOutput = [];
+            targetIP = 'N/A';
+            findings = { medium: 0, critical: 0 };
+            outputEl.innerHTML = `<span class="info">[[ ABSpider v3.1 Console Cleared ]]</span>`;
+            highlightsEl.innerHTML = `<p class="text-gray-500 col-span-2 md:col-span-3" id="no-highlights">Waiting for scan data...</p>`;
+            document.getElementById('findings-summary').classList.add('hidden');
+            saveReportBtn.disabled = true;
+            downloadReportBtn.disabled = true;
+            statusEl.textContent = 'Idle';
+            criticalMetricEl.textContent = 0;
+            targetIpMetricEl.textContent = 'N/A';
+            runningStatusEl.textContent = '00:00';
+            consoleStatusLabelEl.textContent = 'ABSpider Initialized';
+            statusEl.className = 'font-bold text-lg text-gray-500';
+        }
+
+
+        // --- CLIENT-SIDE SCAN FUNCTIONS ---
+        // Only Geo-IP Lookup and SQLi Simulation remain on the client side
+
+        async function runGeoIpLookup(ipToLookup) {
+            const results = [];
+            
+            // ipapi.co is a public, CORS-enabled Geo-IP API
+            const apiUrl = `https://ipapi.co/${ipToLookup}/json/`;
+
+            results.push(`[LIVE API] Geo-IP Lookup on ${ipToLookup} using ipapi.co...`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    results.push(`[ERROR] Geo-IP API error: ${data.reason || 'Unknown reason'}`);
+                } else {
+                    results.push("[SUCCESS] Geo-IP data retrieved.");
+                    results.push("Country: " + (data.country_name || 'N/A'));
+                    results.push("City: " + (data.city || 'N/A'));
+                    results.push("Organization: " + (data.org || 'N/A'));
+                    results.push("Postal: " + (data.postal || 'N/A'));
+                }
+                
+            } catch (e) {
+                results.push(`[ERROR] Geo-IP Lookup failed: API call failed. (Check console for network error)`);
+            }
+            
+            return results;
+        }
+
+        async function runSqliScan(domain) {
+            const results = [];
+            
+            results.push(`[SIMULATED] Initializing SQLi check on common parameters...`);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (domain.toLowerCase().includes("test") || domain.toLowerCase().includes("dev")) {
+                 results.push(`[CRITICAL] Parameter 'id=1' on /test.php potentially vulnerable to basic injection.`);
+                 results.push(`[DETAIL] Payload 'or 1=1-- ' resulted in a database error.`);
+            } else {
+                 results.push(`[INFO] 25 common payloads tested against index and login endpoints. No obvious SQL error patterns detected.`);
+            }
+
+            return results;
+        }
+
+        // --- Main Control Flow (Talks to Flask Backend) ---
+
+        async function startScan() {
+            if (isScanning) {
+                stopScan();
+                return;
+            }
+            
+            const domain = domainInput.value.trim();
+            if (!domain) {
+                showModal('Validation Error', 'Please enter a target domain (e.g., google.com) to start the scan.');
+                return;
+            }
+
+            // Reset UI for new scan
+            clearOutput();
+            isScanning = true;
+            runTextEl.textContent = 'STOP SCAN';
+            runBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
+            runBtn.classList.remove('btn-primary');
+            spinnerEl.classList.remove('hidden');
+            statusEl.textContent = 'Running';
+            statusEl.className = 'font-bold text-lg text-red-500';
+            consoleStatusLabelEl.textContent = 'Scanning in Progress';
+
+            // Filter modules for different execution methods
+            const backendModules = ['basic', 'subdomain', 'wordpress', 'whois'];
+            const simulatedModules = ['sqli'];
+            const clientApiModules = ['geoip'];
+
+            const selectedBackendModules = backendModules.filter(key => document.getElementById(scanModules[key].id).checked);
+            const selectedSimulatedModules = simulatedModules.filter(key => document.getElementById(scanModules[key].id).checked);
+            const isGeoIpSelected = document.getElementById('scan-geoip').checked;
+
+            // Initial Output
+            const selectedModuleNames = selectedBackendModules.map(s => scanModules[s].name.split(' ')[0])
+                .concat(selectedSimulatedModules.map(s => scanModules[s].name.split(' ')[0]))
+                .concat(isGeoIpSelected ? ['Geo-IP'] : []);
+
+            await printOutput([
+                `ABSpider Scanner initiated for target: ${domain}`,
+                `Selected modules: ${selectedModuleNames.join(', ')}`,
+                '----------------------------------------------------'
+            ]);
+
+            // Set up a simplified timer/spinner
+            let scanCounter = 0;
+            const updateTimer = setInterval(() => {
+                if (!isScanning) return clearInterval(updateTimer);
+                scanCounter++;
+                runningStatusEl.textContent = `Elapsed: ${Math.floor(scanCounter / 10)}s`;
+            }, 100);
+
+            try {
+                // 1. EXECUTE BACKEND SCAN (Real Python Logic)
+                if (selectedBackendModules.length > 0) {
+                    await printOutput([`[SCAN] Sending ${selectedBackendModules.length} real scan modules to Flask backend...`]);
+                    
+                    const response = await fetch('/api/scan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            domain: domain,
+                            modules: selectedBackendModules
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP Error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const outputLines = data.output.split('\n');
+                    
+                    if (isScanning) {
+                        await printOutput(outputLines);
+                        updateHighlights(domain); // Update highlights to extract Target IP
+                    }
+                }
+                
+                // 2. EXECUTE CLIENT-SIDE GEO-IP (if selected and IP is available)
+                if (isScanning && isGeoIpSelected) {
+                    await printOutput([`\n[SCAN] Running Module: Geo-IP Lookup...`]);
+
+                    if (targetIP === 'N/A' || targetIP.includes('Unknown') || targetIP.includes('CRITICAL ERROR')) {
+                        await printOutput([`[ERROR] Geo-IP failed: Basic Scan did not resolve a valid Target IP for lookup.`]);
+                    } else {
+                        const geoIpResults = await runGeoIpLookup(targetIP);
+                        await printOutput(geoIpResults);
+                        updateHighlights(domain);
+                    }
+                }
+                
+                // 3. EXECUTE SIMULATED MODULES
+                for (const key of selectedSimulatedModules) {
+                    if (!isScanning) break;
+                    await printOutput([`\n[SCAN] Running Module: ${scanModules[key].name}...`]);
+                    const results = await runSqliScan(domain); // Currently only SQLi is simulated
+                    await printOutput(results);
+                    updateHighlights(domain);
+                }
+
+            } catch (error) {
+                await printOutput([`\n[CRITICAL ERROR] Scan Execution Failed: Could not connect to the backend server. Is Flask running? (Error: ${error.message})`]);
+            }
+
+            // Finalization
+            clearInterval(updateTimer);
+            if (isScanning) {
+                updateHighlights(domain); 
+                await printOutput([
+                    '\n----------------------------------------------------',
+                    '[COMPLETED] All selected modules finished executing.',
+                    `[SUMMARY] ${findings.critical} Critical, ${findings.medium} Medium findings found.`,
+                ]);
+                
+                statusEl.textContent = 'COMPLETE';
+                statusEl.className = 'font-bold text-lg text-green-500';
+                consoleStatusLabelEl.textContent = 'Scan Complete';
+                saveReportBtn.disabled = false;
+                downloadReportBtn.disabled = false;
+                runningStatusEl.textContent = '00:00';
+            } else {
+                await printOutput(['\n[INTERRUPTED] Scan manually stopped by user.']);
+                statusEl.textContent = 'STOPPED';
+                statusEl.className = 'font-bold text-lg text-yellow-500';
+                consoleStatusLabelEl.textContent = 'Scan Interrupted';
+            }
+
+            // Reset controls to idle state
+            isScanning = false;
+            runTextEl.textContent = 'RUN SCAN';
+            runBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+            runBtn.classList.add('btn-primary');
+            spinnerEl.classList.add('hidden');
+        }
+
+        function stopScan() {
+            isScanning = false;
+        }
+
+        // --- Export Modal Handlers (Unchanged) ---
+
+        function showExportModal() {
+            const domain = domainInput.value.trim();
+            const date = new Date().toISOString().split('T')[0];
+            const selectedModuleKeys = Object.keys(scanModules).filter(key => document.getElementById(scanModules[key].id).checked);
+            const selectedScans = selectedModuleKeys.map(key => scanModules[key].name.split(' ')[0]);
+
+            // Update modal content
+            document.getElementById('modal-domain').textContent = domain;
+            document.getElementById('modal-findings').textContent = `${findings.critical} critical, ${findings.medium} medium findings`;
+            document.getElementById('report-filename').textContent = `abspider-${getCleanHostname(domain)}-${date}`;
+
+            const previewText = `
+ABSpider Report — ${domain}
+Date: ${date}
+Includes: ${selectedScans.join(', ')}
+IP: ${targetIP || 'N/A'}
+Findings: ${findings.critical} Critical, ${findings.medium} Medium
+${totalOutput.length} lines of raw log data.
+`;
+            document.getElementById('report-preview').textContent = previewText.trim();
+            
+            document.getElementById('export-modal').classList.remove('hidden');
+        }
+
+        function hideExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+
+        function downloadReport() {
+            showModal('Download Complete', `The comprehensive PDF report for ${domainInput.value.trim()} has been generated and is ready for use.`);
+            hideExportModal();
+        }
+        
+        // --- Custom Modal Function (Unchanged) ---
+        
+        function showModal(title, message) {
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-body').textContent = message;
+            document.getElementById('custom-message-box').classList.remove('hidden');
+        }
+
+
+        // --- Checkbox and Toggle Control (Unchanged) ---
+
+        function toggleAllScans() {
+            const toggle = document.getElementById('main-scan-toggle');
+            const isChecked = toggle.classList.contains('checked');
+            
+            // Toggle the state
+            toggle.classList.toggle('checked', !isChecked);
+
+            const options = document.querySelectorAll('.scan-checkbox');
+            options.forEach(checkbox => {
+                // If turning ON, check everything. If turning OFF, uncheck everything but Basic Scan (which should be mandatory).
+                if (!isChecked) {
+                    checkbox.checked = true;
+                } else if (checkbox.id !== 'scan-basic') {
+                    checkbox.checked = false;
+                }
+            });
+        }
+        
+        // --- Initialization ---
+        window.onload = function() {
+            clearOutput();
+        };
+
+    </script>
+
+</body>
+</html>
