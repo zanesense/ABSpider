@@ -96,6 +96,12 @@ New scan modules require changes in both files:
 
 -----
 
+## 📈 Future Enhancements
+
+- Implement a webhook integration to export the results via a webhook
+- Add support for more file types during exports
+- Implement a proper industry-level SQLi vulnerability analysis
+
 ## ⚠️ Disclaimer
 
 This tool is designed for educational purposes and ethical penetration testing ONLY. **DO NOT** use this application to scan targets without explicit, prior written permission from the target domain's owner. Misuse of this tool can lead to severe legal consequences.
