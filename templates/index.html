@@ -1,61 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/x-icon" href="/static/images/spider.ico">
-    <link rel="shortcut icon" type="image/x-icon" href="/static/images/spider.ico">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>ABSpider Vulnerability Scanner</title>
+
+    <!-- Tailwind + fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <!-- jsPDF fallback for client-side PDF if backend unavailable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <style>
-        /* (Original CSS preserved) */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #111827;
-            color: #d1d5db;
-        }
-        .scanner-card { max-width: 1200px; margin: 4rem auto; background-color: #1f2937; border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid #374151; }
-        .output-console { height: 450px; background-color: #030712; color: #6ee7b7; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; padding: 1rem; border-radius: 0.75rem; overflow-y: auto; white-space: pre-wrap; border: 1px solid #1f2937; }
-        .output-console::-webkit-scrollbar { width: 8px; }
-        .output-console::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 4px; }
-        .output-console .error { color: #f87171; }
-        .output-console .success { color: #34d399; }
-        .output-console .info { color: #93c5fd; }
-        .output-console .critical { color: #f87171; font-weight: bold; }
-        .output-console .warning { color: #facc15; }
-        .output-console .api { color: #a78bfa; }
-        .parsed-highlights { min-height: 150px; background-color: #111827; border: 1px solid #374151; }
-        .scan-checkbox { appearance: none; -webkit-appearance: none; -moz-appearance: none; width: 1.25rem; height: 1.25rem; border: 2px solid #ef4444; background-color: #1f2937; border-radius: 0.25rem; margin-right: 0.5rem; cursor: pointer; transition: all 0.2s ease; position: relative; }
-        .scan-checkbox:checked { background-color: #ef4444; border-color: #ef4444; }
-        .scan-checkbox:checked::before { content: '\2713'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #1f2937; font-size: 0.75rem; }
-        .scan-toggle { width: 3.5rem; height: 1.5rem; background-color: #4b5563; border-radius: 9999px; position: relative; cursor: pointer; transition: background-color 0.3s; }
-        .scan-toggle-circle { width: 1.25rem; height: 1.25rem; background-color: white; border-radius: 9999px; position: absolute; top: 0.125rem; left: 0.125rem; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
-        .scan-toggle.checked { background-color: #ef4444; }
-        .scan-toggle.checked .scan-toggle-circle { transform: translateX(2rem); }
-        .btn-primary { background-color: #ef4444; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 700; transition: background-color 0.2s, transform 0.1s; box-shadow: 0 4px 6px -1px rgba(239,68,68,0.5), 0 2px 4px -2px rgba(239,68,68,0.5); }
-        .btn-primary:hover { background-color: #dc2626; }
-        .btn-primary:active { transform: translateY(1px); box-shadow: none; }
-        .btn-secondary { background-color: #374151; color: #d1d5db; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: background-color 0.2s; }
-        .btn-secondary:hover { background-color: #4b5563; }
-        .btn-secondary:disabled { background-color: #374151; opacity: 0.5; cursor: not-allowed; }
-        input[type="text"] { background-color: #374151; border: 1px solid #4b5563; color: white; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
-        input[type="text"]:focus { outline: none; border-color: #ef4444; box-shadow: 0 0 0 1px #ef4444; }
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 50; }
-        .modal-content { background-color: #1f2937; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 700px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -4px rgba(0,0,0,0.3); animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        .format-btn { background-color: #374151; border: 1px solid #4b5563; color: #d1d5db; transition: all 0.2s; }
-        .format-btn:hover { background-color: #4b5563; }
-        .format-btn.selected { border-color: #ef4444; background-color: #ef4444; color: white; }
-        .format-btn.selected .format-tag { background-color: #dc2626; }
-        .format-tag { background-color: #4b5563; color: #d1d5db; }
-    </style>
+    <!-- Local CSS -->
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
     <div class="scanner-card p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-1">
             <div class="flex items-center mb-6">
@@ -80,7 +40,7 @@
                 </div>
             
                 <div id="action-buttons" class="space-y-3 pt-2">
-                    <button id="run-scan-btn" class="btn-primary w-full flex items-center justify-center" onclick="startScan()">
+                    <button id="run-scan-btn" class="btn-primary w-full flex items-center justify-center" type="button">
                         <svg id="run-scan-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -89,16 +49,16 @@
                     </button>
                     
                     <div class="flex space-x-3">
-                        <button id="save-report-btn" class="btn-secondary w-full" disabled>
+                        <button id="save-report-btn" class="btn-secondary w-full" disabled type="button">
                             Save Session
                         </button>
-                        <button id="clear-output-btn" class="btn-secondary w-full" onclick="clearOutput()">
+                        <button id="clear-output-btn" class="btn-secondary w-full" type="button">
                             Clear Logs
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-gray-900 p-4 rounded-xl space-y-3 border border-red-500/30">
+                <div class="bg-gray-900 p-4 rounded-xl space-y-3 border border-red-500/30 mt-3">
                     <h3 class="text-sm font-semibold text-red-400 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21l-1.5-6.75H3.75z" />
@@ -129,7 +89,7 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between mb-2 border-b border-gray-700 pb-2">
                     <label class="text-xl font-bold text-white">Modules</label>
-                    <div id="main-scan-toggle" class="scan-toggle checked" onclick="toggleAllScans()">
+                    <div id="main-scan-toggle" aria-pressed="true" class="scan-toggle checked" role="button" tabindex="0">
                         <div class="scan-toggle-circle"></div>
                     </div>
                 </div>
@@ -169,7 +129,7 @@
                     <h2 class="text-xl font-bold text-white">Live Console Output</h2>
                     <span id="console-status-label" class="text-sm font-mono text-gray-400">ABSpider Initialized</span>
                 </div>
-                <pre id="live-output" class="output-console">
+                <pre id="live-output" class="output-console" tabindex="0">
 <span class="info">[[ ABSpider v1.0 Initializing Console... ]]</span>
 <span class="info">Ready to scan. Enter a domain and click RUN SCAN.</span>
 <span class="info">Live modules: Basic Check, Whois, Subdomains, WordPress (via Python backend).</span>
@@ -194,7 +154,7 @@
                 </div>
 
                 <div class="flex justify-end mt-6">
-                    <button id="download-report-btn" class="btn-primary" onclick="showExportModal()" disabled>
+                    <button id="download-report-btn" class="btn-primary" type="button" disabled>
                         DOWNLOAD FULL REPORT
                     </button>
                 </div>
@@ -202,7 +162,8 @@
         </div>
     </div>
 
-    <div id="export-modal" class="modal-overlay hidden">
+    <!-- Export modal -->
+    <div id="export-modal" class="modal-overlay hidden" aria-hidden="true">
         <div class="modal-content bg-gray-800 text-white border border-gray-700">
             <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
                 <h2 class="text-2xl font-bold text-red-400">Export Report</h2>
@@ -224,19 +185,19 @@
                 </div>
 
                 <div class="space-y-2">
-                    <button data-format="pdf" class="format-btn w-full text-left p-3 border border-red-500 rounded-lg bg-red-900/40 hover:bg-red-900/60 transition text-white selected">
+                    <button data-format="pdf" class="format-btn w-full text-left p-3 border border-red-500 rounded-lg bg-red-900/40 hover:bg-red-900/60 transition text-white selected" type="button">
                         <span class="font-semibold">PDF</span> (.pdf) <span class="float-right text-xs px-2 py-0.5 bg-red-600 text-white rounded-full">Recommended</span>
                     </button>
-                    <button data-format="txt" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                    <button data-format="txt" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300" type="button">
                         <span class="font-semibold">TXT</span> (.txt)
                     </button>
-                    <button data-format="md" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                    <button data-format="md" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300" type="button">
                         <span class="font-semibold">Markdown</span> (.md)
                     </button>
-                    <button data-format="json" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                    <button data-format="json" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300" type="button">
                         <span class="font-semibold">JSON</span> (.json)
                     </button>
-                    <button data-format="html" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300">
+                    <button data-format="html" class="format-btn w-full text-left p-3 border border-gray-700 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition text-gray-300" type="button">
                         <span class="font-semibold">HTML</span> (.html)
                     </button>
                 </div>
@@ -244,516 +205,22 @@
 
             <div class="flex justify-end items-center mt-6 pt-4 border-t border-gray-700">
                 <div class="space-x-3">
-                    <button class="btn-secondary px-4 py-2" onclick="hideExportModal()">Cancel</button>
-                    <button id="modal-download-btn" class="btn-primary" onclick="downloadReport()">Download</button> 
+                    <button class="btn-secondary px-4 py-2" type="button">Cancel</button>
+                    <button id="modal-download-btn" class="btn-primary" type="button">Download</button> 
                 </div>
             </div>
         </div>
     </div>
-    
-    <div id="custom-message-box" class="modal-overlay hidden">
+
+    <div id="custom-message-box" class="modal-overlay hidden" aria-hidden="true">
         <div class="modal-content bg-gray-800 text-white border border-gray-700 text-center max-w-sm">
             <h3 id="message-title" class="text-xl font-bold mb-3 text-red-400"></h3>
             <p id="message-body" class="text-gray-300 mb-6"></p>
-            <button class="btn-primary w-24" onclick="document.getElementById('custom-message-box').classList.add('hidden')">OK</button>
+            <button class="btn-primary w-24" type="button">OK</button>
         </div>
     </div>
 
-<script>
-    // --- Core Variables and Configuration ---
-    const outputEl = document.getElementById('live-output');
-    const statusEl = document.getElementById('scan-status');
-    const runBtn = document.getElementById('run-scan-btn');
-    const runTextEl = document.getElementById('run-scan-text');
-    const spinnerEl = document.getElementById('run-scan-spinner');
-    const domainInput = document.getElementById('target-domain');
-    const highlightsEl = document.getElementById('highlights-content');
-    const noHighlightsEl = document.getElementById('no-highlights');
-    const saveReportBtn = document.getElementById('save-report-btn');
-    const downloadReportBtn = document.getElementById('download-report-btn');
-    const runningStatusEl = document.getElementById('running-status');
-    const criticalMetricEl = document.getElementById('critical-findings-metric');
-    const targetIpMetricEl = document.getElementById('target-ip-metric');
-    const consoleStatusLabelEl = document.getElementById('console-status-label');
-
-    let isScanning = false;
-    let totalOutput = [];
-    let targetIP = 'N/A';
-    let findings = { medium: 0, critical: 0 };
-
-    const scanModules = {
-        'basic': { id: 'scan-basic', name: 'Basic Check (Live)', type: 'backend' },
-        'whois': { id: 'scan-whois', name: 'Whois Lookup (Live)', type: 'backend' },
-        'subdomain': { id: 'scan-subdomain', name: 'Subdomain Scan (Live)', type: 'backend' },
-        'wordpress': { id: 'scan-wordpress', name: 'WordPress Scan (Live)', type: 'backend' },
-        'sqli': { id: 'scan-sqli', name: 'Error Based SQli (Simulated)', type: 'simulated' },
-        'geoip': { id: 'scan-geoip', name: 'Geo-IP Lookup (Client API)', type: 'client-api' }
-    };
-
-    function getCleanHostname(url) {
-        try {
-            if (!url.startsWith('http')) {
-                url = 'https://' + url;
-            }
-            const urlObj = new URL(url);
-            let host = urlObj.hostname;
-            if (host.startsWith('www.')) {
-                host = host.substring(4);
-            }
-            return host;
-        } catch (e) {
-            return url;
-        }
-    }
-
-    function formatLine(line) {
-        if (line.includes('[CRITICAL ERROR]') || line.includes('[CRITICAL]')) {
-            return `<span class="critical">${line}</span>`;
-        } else if (line.includes('[ERROR]')) {
-            return `<span class="error">${line}</span>`;
-        } else if (line.includes('[SUCCESS]')) {
-            return `<span class="success">${line}</span>`;
-        } else if (line.includes('[FINDING]') || line.includes('[WARNING]')) {
-            return `<span class="warning">${line}</span>`;
-        } else if (line.includes('[LIVE API]')) {
-             return `<span class="api">${line}</span>`;
-        } else if (line.includes('[INFO]') || line.startsWith('--- Executing Module') || line.startsWith('$ abspider') || line.startsWith('[SCAN]')) {
-            return `<span class="info">${line}</span>`;
-        }
-        return line;
-    }
-
-    async function printOutput(lines) {
-        for (const line of lines) {
-            const isScrolledToBottom = outputEl.scrollHeight - outputEl.clientHeight <= outputEl.scrollTop + 1;
-            totalOutput.push(line);
-            outputEl.innerHTML = totalOutput.map(formatLine).join('\n');
-            if (isScrolledToBottom) outputEl.scrollTop = outputEl.scrollHeight;
-            await new Promise(resolve => setTimeout(resolve, 5));
-        }
-    }
-
-    function updateHighlights(domain) {
-        highlightsEl.innerHTML = '';
-        let hasHighlights = false;
-        let currentHighlights = {};
-
-        const highlightMap = {
-            'IP': line => line.includes('Target IP resolved:') && line.split(': ')[1].trim(),
-            'Server': line => line.includes('Server:') && line.split('Server: ')[1].trim(),
-            'Country': line => line.includes('Country:') && line.split('Country: ')[1].trim(),
-            'City': line => line.includes('City:') && line.split('City: ')[1].trim(),
-            'Organization': line => line.includes('Organization:') && line.split('Organization: ')[1].trim(),
-            'WordPress Version': line => line.includes('WordPress Version:') && line.split('WordPress Version: ')[1].trim(),
-            'Registrar': line => line.includes('Registrar:') && line.split('Registrar: ')[1].trim(),
-        };
-
-        findings = { medium: 0, critical: 0 };
-
-        totalOutput.forEach(line => {
-            if (line.includes('[FINDING]') || line.includes('[WARNING]')) findings.medium++;
-            if (line.includes('[CRITICAL]') || line.includes('[CRITICAL ERROR]')) findings.critical++;
-            for (const key in highlightMap) {
-                if (!currentHighlights[key]) {
-                    try {
-                        const value = highlightMap[key](line);
-                        if (value) currentHighlights[key] = value;
-                    } catch (e) {}
-                }
-            }
-        });
-
-        const displayMapping = {
-            'IP': 'Target IP',
-            'Server': 'Web Server',
-            'Country': 'Country/Region',
-            'City': 'City/Location',
-            'Organization': 'Organization',
-            'WordPress Version': 'CMS/Version',
-            'Registrar': 'Registrar',
-        };
-
-        const keysToDisplay = ['IP', 'Country', 'City', 'Server', 'Registrar', 'Organization', 'WordPress Version'];
-        keysToDisplay.forEach(key => {
-            if (currentHighlights[key]) {
-                const label = displayMapping[key] || key;
-                const value = currentHighlights[key];
-                highlightsEl.innerHTML += `
-                    <div class="flex flex-col p-2 bg-gray-900 rounded-md">
-                        <span class="text-gray-400 text-xs">${label}</span>
-                        <span class="text-white font-mono">${value}</span>
-                    </div>`;
-                hasHighlights = true;
-                if (key === 'IP') targetIP = value;
-            }
-        });
-
-        highlightsEl.innerHTML += `<div class="flex flex-col p-2 bg-gray-900 rounded-md">
-            <span class="text-gray-400 text-xs">Ports</span>
-            <span class="text-white font-mono">80, 443 (Sim)</span>
-        </div>`;
-        hasHighlights = true;
-
-        if (!hasHighlights) highlightsEl.appendChild(noHighlightsEl);
-        else document.getElementById('findings-summary').classList.remove('hidden');
-
-        document.getElementById('medium-findings').textContent = `${findings.medium} medium findings`;
-        document.getElementById('critical-findings').textContent = `${findings.critical} critical findings`;
-        criticalMetricEl.textContent = findings.critical;
-        targetIpMetricEl.textContent = targetIP;
-    }
-
-    function clearOutput() {
-        if (isScanning) return;
-        totalOutput = [];
-        targetIP = 'N/A';
-        findings = { medium: 0, critical: 0 };
-        outputEl.innerHTML = `<span class="info">[[ ABSpider v1.0 Console Cleared ]]</span>`;
-        highlightsEl.innerHTML = `<p class="text-gray-500 col-span-2 md:col-span-3" id="no-highlights">Waiting for scan data...</p>`;
-        document.getElementById('findings-summary').classList.add('hidden');
-        saveReportBtn.disabled = true;
-        downloadReportBtn.disabled = true;
-        statusEl.textContent = 'Idle';
-        criticalMetricEl.textContent = 0;
-        targetIpMetricEl.textContent = 'N/A';
-        runningStatusEl.textContent = '00:00';
-        consoleStatusLabelEl.textContent = 'ABSpider Initialized';
-        statusEl.className = 'font-bold text-lg text-gray-500';
-    }
-
-    async function runGeoIpLookup(ipToLookup) {
-        const results = [];
-        const apiUrl = `https://ipapi.co/${ipToLookup}/json/`;
-        results.push(`[LIVE API] Geo-IP Lookup on ${ipToLookup} using ipapi.co...`);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        try {
-            const response = await fetch(apiUrl);
-            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-            const data = await response.json();
-            if (data.error) results.push(`[ERROR] Geo-IP API error: ${data.reason || 'Unknown reason'}`);
-            else {
-                results.push("[SUCCESS] Geo-IP data retrieved.");
-                results.push("Country: " + (data.country_name || 'N/A'));
-                results.push("City: " + (data.city || 'N/A'));
-                results.push("Organization: " + (data.org || 'N/A'));
-                results.push("Postal: " + (data.postal || 'N/A'));
-            }
-        } catch (e) {
-            results.push(`[ERROR] Geo-IP Lookup failed: API call failed. (Check console for network error)`);
-        }
-        return results;
-    }
-
-    async function runSqliScan(domain) {
-        const results = [];
-        results.push(`[SIMULATED] Initializing SQLi check on common parameters...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        if (domain.toLowerCase().includes("test") || domain.toLowerCase().includes("dev")) {
-             results.push(`[CRITICAL] Parameter 'id=1' on /test.php potentially vulnerable to basic injection.`);
-             results.push(`[DETAIL] Payload 'or 1=1-- ' resulted in a database error.`);
-        } else {
-             results.push(`[INFO] 25 common payloads tested against index and login endpoints. No obvious SQL error patterns detected.`);
-        }
-        return results;
-    }
-
-    async function startScan() {
-        if (isScanning) {
-            stopScan();
-            return;
-        }
-
-        const domain = domainInput.value.trim();
-        if (!domain) {
-            showModal('Validation Error', 'Please enter a target domain (e.g., google.com) to start the scan.');
-            return;
-        }
-
-        clearOutput();
-        isScanning = true;
-        runTextEl.textContent = 'STOP SCAN';
-        runBtn.classList.add('bg-gray-500', 'hover:bg-gray-600');
-        runBtn.classList.remove('btn-primary');
-        spinnerEl.classList.remove('hidden');
-        statusEl.textContent = 'Running';
-        statusEl.className = 'font-bold text-lg text-red-500';
-        consoleStatusLabelEl.textContent = 'Scanning in Progress';
-
-        const backendModules = ['basic', 'subdomain', 'wordpress', 'whois'];
-        const simulatedModules = ['sqli'];
-        const clientApiModules = ['geoip'];
-
-        const selectedBackendModules = backendModules.filter(key => {
-            const m = scanModules[key];
-            return m && document.getElementById(m.id) && document.getElementById(m.id).checked;
-        });
-        const selectedSimulatedModules = simulatedModules.filter(key => document.getElementById(scanModules[key].id).checked);
-        const isGeoIpSelected = document.getElementById('scan-geoip') && document.getElementById('scan-geoip').checked;
-
-        const selectedModuleNames = selectedBackendModules.map(s => scanModules[s].name.split(' ')[0])
-            .concat(selectedSimulatedModules.map(s => scanModules[s].name.split(' ')[0]))
-            .concat(isGeoIpSelected ? ['Geo-IP'] : []);
-
-        await printOutput([
-            `ABSpider Scanner initiated for target: ${domain}`,
-            `Selected modules: ${selectedModuleNames.join(', ')}`,
-            '----------------------------------------------------'
-        ]);
-
-        let scanCounter = 0;
-        const updateTimer = setInterval(() => {
-            if (!isScanning) return clearInterval(updateTimer);
-            scanCounter++;
-            runningStatusEl.textContent = `Elapsed: ${Math.floor(scanCounter / 10)}s`;
-        }, 100);
-
-        try {
-            if (selectedBackendModules.length > 0) {
-                await printOutput([`[SCAN] Sending ${selectedBackendModules.length} real scan modules to Flask backend...`]);
-
-                const proxyVal = (document.getElementById('scan-proxy') && document.getElementById('scan-proxy').value.trim()) || null;
-                const webhookVal = (document.getElementById('scan-webhook') && document.getElementById('scan-webhook').value.trim()) || null;
-                const saveProxyFlag = false;
-
-                const response = await fetch('/api/scan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        domain: domain,
-                        modules: selectedBackendModules,
-                        proxy: proxyVal,
-                        save_proxy: saveProxyFlag,
-                        webhook: webhookVal
-                    })
-                });
-
-                if (!response.ok) {
-                    let errText = `HTTP Error! Status: ${response.status}`;
-                    try {
-                        const errJson = await response.json();
-                        errText = errJson.error || errText;
-                    } catch (e) {}
-                    throw new Error(errText);
-                }
-
-                const data = await response.json();
-                const outputLines = (data.output || '').split('\n').filter(Boolean);
-
-                if (isScanning) {
-                    await printOutput(outputLines);
-                    updateHighlights(domain);
-                    // enable report buttons now that logs exist
-                    saveReportBtn.disabled = false;
-                    downloadReportBtn.disabled = false;
-                }
-            }
-
-            if (isScanning && isGeoIpSelected) {
-                await printOutput([`\n[SCAN] Running Module: Geo-IP Lookup...`]);
-
-                if (targetIP === 'N/A' || targetIP.includes('Unknown') || targetIP.includes('CRITICAL ERROR')) {
-                    await printOutput([`[ERROR] Geo-IP failed: Basic Scan did not resolve a valid Target IP for lookup.`]);
-                } else {
-                    const geoIpResults = await runGeoIpLookup(targetIP);
-                    await printOutput(geoIpResults);
-                    updateHighlights(domain);
-                }
-            }
-
-            for (const key of selectedSimulatedModules) {
-                if (!isScanning) break;
-                await printOutput([`\n[SCAN] Running Module: ${scanModules[key].name}...`]);
-                const results = await runSqliScan(domain);
-                await printOutput(results);
-                updateHighlights(domain);
-            }
-
-        } catch (error) {
-            await printOutput([`\n[CRITICAL ERROR] Scan Execution Failed: Could not connect to the backend server. Is Flask running? (Error: ${error.message})`]);
-        }
-
-        clearInterval(updateTimer);
-        if (isScanning) {
-            updateHighlights(domain);
-            await printOutput([
-                '\n----------------------------------------------------',
-                '[COMPLETED] All selected modules finished executing.',
-                `[SUMMARY] ${findings.critical} Critical, ${findings.medium} Medium findings found.`,
-            ]);
-
-            statusEl.textContent = 'COMPLETE';
-            statusEl.className = 'font-bold text-lg text-green-500';
-            consoleStatusLabelEl.textContent = 'Scan Complete';
-            saveReportBtn.disabled = false;
-            downloadReportBtn.disabled = false;
-            runningStatusEl.textContent = '00:00';
-        } else {
-            await printOutput(['\n[INTERRUPTED] Scan manually stopped by user.']);
-            statusEl.textContent = 'STOPPED';
-            statusEl.className = 'font-bold text-lg text-yellow-500';
-            consoleStatusLabelEl.textContent = 'Scan Interrupted';
-        }
-
-        isScanning = false;
-        runTextEl.textContent = 'RUN SCAN';
-        runBtn.classList.remove('bg-gray-500', 'hover:bg-gray-600');
-        runBtn.classList.add('btn-primary');
-        spinnerEl.classList.add('hidden');
-    }
-
-    function stopScan() {
-        isScanning = false;
-    }
-
-    function showExportModal() {
-        const domain = domainInput.value.trim();
-        const date = new Date().toISOString().split('T')[0];
-        const selectedModuleKeys = Object.keys(scanModules).filter(key => document.getElementById(scanModules[key].id).checked);
-        const selectedScans = selectedModuleKeys.map(key => scanModules[key].name.split(' ')[0]);
-
-        document.getElementById('modal-domain').textContent = domain;
-        document.getElementById('modal-findings').textContent = `${findings.critical} critical, ${findings.medium} medium findings`;
-        document.getElementById('report-filename').textContent = `abspider-${getCleanHostname(domain)}-${date}`;
-
-        const previewText = `
-ABSpider Report — ${domain}
-Date: ${date}
-Includes: ${selectedScans.join(', ')}
-IP: ${targetIP || 'N/A'}
-Findings: ${findings.critical} Critical, ${findings.medium} Medium
-${totalOutput.length} lines of raw log data.
-`;
-        document.getElementById('report-preview').textContent = previewText.trim();
-        document.getElementById('report-format-label').textContent = 'PDF (Default)';
-
-        // default selection: pdf
-        document.querySelectorAll('.format-btn').forEach(btn => btn.classList.remove('selected'));
-        const pdfBtn = document.querySelector('.format-btn[data-format="pdf"]');
-        if (pdfBtn) pdfBtn.classList.add('selected');
-
-        document.getElementById('export-modal').classList.remove('hidden');
-    }
-
-    function hideExportModal() {
-        document.getElementById('export-modal').classList.add('hidden');
-    }
-
-    async function downloadReport() {
-        const modalDownloadBtn = document.getElementById('modal-download-btn');
-        modalDownloadBtn.disabled = true;
-        modalDownloadBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
-        const domain = domainInput.value.trim();
-        let chosenFormat = 'pdf';
-        const sel = document.querySelector('.format-btn.selected');
-        if (sel && sel.dataset && sel.dataset.format) chosenFormat = sel.dataset.format;
-
-        // Use totalOutput (fixed: no undefined variable)
-        const payload = {
-            domain: domain,
-            full_log_output: totalOutput,
-            findings: findings,
-            format: chosenFormat,
-            webhook: (document.getElementById('scan-webhook') && document.getElementById('scan-webhook').value.trim()) || null
-        };
-
-        try {
-            const resp = await fetch('/api/report', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
-
-            if (!resp.ok) {
-                let err = `Report endpoint returned HTTP ${resp.status}`;
-                try {
-                    const j = await resp.json();
-                    err = j.error || err;
-                } catch (e) {}
-                showModal('Report Error', err);
-                modalDownloadBtn.disabled = false;
-                modalDownloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                return;
-            }
-
-            // parse filename
-            let filename = document.getElementById('report-filename').textContent || `abspider-${getCleanHostname(domain)}.${chosenFormat}`;
-            const cd = resp.headers.get('Content-Disposition');
-            if (cd) {
-                const match = /filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/i.exec(cd);
-                if (match) filename = decodeURIComponent(match[1]);
-            }
-
-            const blob = await resp.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-
-            showModal('Download Complete', `The comprehensive ${chosenFormat.toUpperCase()} report for ${domain} has been downloaded as ${filename}.`);
-            hideExportModal();
-        } catch (e) {
-            showModal('Report Error', `Failed to generate/download report: ${e.message}`);
-        } finally {
-            modalDownloadBtn.disabled = false;
-            modalDownloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    }
-
-    // Save session locally
-    saveReportBtn.addEventListener('click', () => {
-        if (!totalOutput || totalOutput.length === 0) {
-            showModal('Nothing to Save', 'There are no logs to save yet. Run a scan first.');
-            return;
-        }
-        const domain = domainInput.value.trim() || 'session';
-        const date = new Date().toISOString().split('T')[0];
-        const filename = `abspider-${getCleanHostname(domain)}-${date}.txt`;
-        const content = totalOutput.join('\n');
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        showModal('Saved', `Session saved locally as ${filename}.`);
-    });
-
-    function showModal(title, message) {
-        document.getElementById('message-title').textContent = title;
-        document.getElementById('message-body').textContent = message;
-        document.getElementById('custom-message-box').classList.remove('hidden');
-    }
-
-    function toggleAllScans() {
-        const toggle = document.getElementById('main-scan-toggle');
-        const isChecked = toggle.classList.contains('checked');
-        toggle.classList.toggle('checked', !isChecked);
-
-        const options = document.querySelectorAll('.scan-checkbox');
-        options.forEach(checkbox => {
-            if (!isChecked) checkbox.checked = true;
-            else if (checkbox.id !== 'scan-basic') checkbox.checked = false;
-        });
-    }
-
-    window.onload = function() {
-        clearOutput();
-        document.querySelectorAll('.format-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.format-btn').forEach(x => x.classList.remove('selected'));
-                btn.classList.add('selected');
-            });
-        });
-    };
-</script>
-
+    <!-- Local JS -->
+    <script src="app.js"></script>
 </body>
 </html>
