@@ -43,7 +43,10 @@ python app.py
 ABSpider/
 ├─ app.py                 # Flask backend + routes
 ├─ scanner_logic.py       # Scan logic, threading, PDF & webhook
-├─ templates/index.html   # UI (theme preserved)
+├─ templates
+│  ├─ index.html         
+│  ├─ styles.css          
+│  └─ app.js
 ├─ static/
 │  ├─ images/spider.ico
 │  └─ reports/
