@@ -1,6 +1,3 @@
-// app.js — moved from inline HTML
-// Keep the same core behavior, but cleaned up event handling and a few small bugs.
-
 document.addEventListener('DOMContentLoaded', () => {
     // Elements
     const outputEl = document.getElementById('live-output');
@@ -549,3 +546,4 @@ ${totalOutput.length} lines of raw log data.
     // initialize UI
     clearOutput();
 });
+
