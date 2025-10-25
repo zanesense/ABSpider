@@ -1,5 +1,12 @@
 # 🕷️ ABSpider — Vulnerability Scanner (v1.0)
 
+![Python Version](https://img.shields.io/badge/Python-3.x-blue)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)
+![Issues](https://img.shields.io/github/issues/zanesense/ABSpider)
+![Stars](https://img.shields.io/github/stars/zanesense/ABSpider)
+![Forks](https://img.shields.io/github/forks/zanesense/ABSpider)
+
+
 ABSpider is a lightweight web reconnaissance and reporting dashboard built with **Flask + Tailwind**.  
 It performs passive recon, header checks, WHOIS lookups, subdomain scans, and more — then generates **beautiful PDF reports**.  
 Includes proxy rotation, Discord webhook integration, and threaded scanning for speed.
